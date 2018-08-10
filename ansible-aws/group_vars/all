@@ -1,0 +1,5 @@
+aws_access_key: AKIAJNCTLK4BVLM4SOTA
+aws_secret_key: 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
+ami_id: ami-6d1c2007
+aws_region: us-east-1
+vpc_id: vpc-0d4488744d8442a76

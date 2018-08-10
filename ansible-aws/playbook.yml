@@ -1,0 +1,69 @@
+---
+- hosts : localhost
+  connection : local
+  gather_facts : false
+  tasks :
+    - name : Create a new EC2 SG Group
+      ec2_group : 
+       name : Ansible_SG
+       description : Group created by Ansible
+       region : '{{aws_region}}'
+       vpc_id : '{{vpc_id}}'
+       aws_access_key : '{{aws_access_key}}'
+       aws_secret_key : '{{aws_secret_key}}'
+       rules :       
+       - proto : tcp  
+         ports:
+         - 22
+         - 80
+         cidr_ip : 0.0.0.0/0
+       # rules_egress :        
+       # - proto : tcp  
+         # ports:
+         # - 22
+         # - 80
+       # cidr_ip : 0.0.0.0/0
+      # register :
+       # Security_Group
+    - name : Deploy a new EC2 instance
+      ec2 :
+       aws_access_key : '{{aws_access_key}}'
+       aws_secret_key : '{{aws_secret_key}}'
+       region : '{{aws_region}}'
+       vpc_subnet_id : subnet-00ace2ee0cb3d08ef
+       group : Ansible_SG
+       key_name : abhinew1
+       instance_type : t2.micro
+       image : ami-b70554c8
+       wait : true
+       exact_count : 2
+       count_tag :
+        Name : Amir
+       instance_tags :
+        Name : Ansible
+      register : ec2
+    # - name : Debug
+      # debug: var=ec2
+    # - name : Wait for SSH to come up
+      # wait_for : host={{ item.public_dns_name }} port=22 state=started delay=60 timeout=320
+      # with_items : '{{ec2.instances}}'
+      
+      # - name: Create SSH Group to login dynamically to EC2 Instance
+      # add_host: 
+        # hostname: "{{ item.public_ip }}"
+        # groupname: ec2_server
+      # with_items: ec2.instances
+
+    # - name: Wait for SSH to come up
+      # wait_for: 
+        # host: "{{ item.public_ip }}" 
+        # port: 22 
+        # state: started
+      # with_items: ec2.instances
+
+ # - hosts: ec2_server
+   # become: yes
+   # # Use ec2_user if you are using CentOS/Amazon server
+   # remote_user: ubuntu # for Ubuntu server
+   # gather_facts: yes
+      

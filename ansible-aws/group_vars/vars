@@ -1,0 +1,2 @@
+aws_access_key: '{{vault_password}}'
+aws_secret_key: '{{key}}'
