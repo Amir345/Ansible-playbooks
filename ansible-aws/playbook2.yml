@@ -24,7 +24,7 @@
          # - 80
        # cidr_ip : 0.0.0.0/0
       # register :
-       # Security_Group
+       # Security_Group             
     - name : Deploy a new EC2 instance
       ec2 :
        aws_access_key : '{{aws_access_key}}'
@@ -35,7 +35,7 @@
        key_name : amiransible
        instance_type : t2.micro
        image : ami-b70554c8
-       id : "adgajkdgdlkagdlsa" \\ creates idempotency
+       id : "adgajkdfdaysasaslkagaa"
        wait : true
        exact_count : 2
        count_tag :
@@ -70,15 +70,17 @@
        delay : 30
        timeout : 90
        state : started
-      with_items : '{{ mylist }}' \\ You have to either define this list at the top or passing this as extra vars
-
-# - hosts : ec2_server
-  # become : yes
-   # # # Use ec2_user if you are using CentOS/Amazon server
-  # remote_user : ec2-user
-  # gather_facts : false
-  # tasks:
-    # - name : Install HTTPD package on the machines
-      # yum : 
-       # name : httpd
-       # state : present
+      with_items : '{{ mylist }}'
+      
+      #### In order to connect via the private key either define the key in the ansible.cfg (KEEP IT AT THE SAME DIRECTORY) file or use it at run time by using --private-key $PATH_TO_KEY
+      
+- hosts : ec2_server
+  become : yes
+   # # Use ec2_user if you are using CentOS/Amazon server
+  user : ec2-user
+  gather_facts : true
+  tasks:
+    - name : Install HTTPD package
+      yum:
+       name: httpd
+       state: present
