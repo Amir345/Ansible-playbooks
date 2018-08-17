@@ -35,7 +35,7 @@
        key_name : amiransible
        instance_type : t2.micro
        image : ami-b70554c8
-       id : "adgajkdfdaysasaslkagaa"
+       id : "adasacxadqd"
        wait : true
        exact_count : 2
        count_tag :
@@ -47,8 +47,13 @@
     - name : EC2 instances
       set_fact : ec2_instances='{{ec2.instances}}'
       # debug : msg='{{ ec2.instances }}'
-
-       #name : debug
+    - name : Save our EC2 servername to a local file. 
+      local_action: copy content={{ ec2_instances[item].public_dns_name }} dest=group_vars/ec2/endpoints_{{item}}
+      with_items : '{{ mylist }}'
+    - name : Merge the hostnames in one file
+      local_action : shell sed r group_vars/ec2/* > /root/ansible-aws/group_vars/endpoints.txt && rm -rf /root/ansible-aws/group_vars/ec2
+  ### The above tasks consolidates the hostnames of ec2 instances in one file which can be used as an inventory for later playbooks.
+      #name : debug
        #debug: var=ec2
     # - name : Wait for SSH to come up
       # wait_for : host={{ item.public_dns_name }} port=22 state=started delay=60 timeout=320
@@ -72,7 +77,46 @@
        state : started
       with_items : '{{ mylist }}'
       
-      #### In order to connect via the private key either define the key in the ansible.cfg (KEEP IT AT THE SAME DIRECTORY) file or use it at run time by using --private-key $PATH_TO_KEY
+# - hosts : ec2_server
+  # become : yes
+   # # # Use ec2_user if you are using CentOS/Amazon server
+  # user : ec2-user
+  # gather_facts : true
+  # tasks:
+    # - name : getting the public dns name of the new instances in a file
+      # # ec2_instance_facts:
+      # copy :
+       # content : "{% for host in ec2_server %}{{ hostvars[host].stdout }}\n{% endfor %}"
+       # dest : /group_vars/endpoints
+      # delegate_to : localhost
+      # run_once : true
+      
+    # - name : Creating a load balancer using port 80
+      # local_action :
+       # module : ec2_elb_lb
+       # aws_access_key : "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
+       # aws_secret_key : "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY')}}"
+       # name : aws-ansible-elb
+       # state : present
+       # region : '{{ aws_region }}'
+       # zones :
+        # - us-east-1a
+       # listeners :
+        # - protocol : http
+          # load_balancer_port : 80
+          # instance_port : 80
+      # register: awsansible-elb
+    # - name : checking the output of the newly provisioned load balancer
+      # debug : msg = '{{ aws-ansible-elb }}'
+    # - name : add webservers to the load balancer
+      # local_action : ec2_elb
+      # args :
+       # instance_id : '{{ ec2_instances[item].id }}'
+       # ec2_elbs : aws-ansible-elb
+       # state : present
+       # region : '{{ aws_region }}'
+      # with_items : '{{ mylist }}'
+      
       
 - hosts : ec2_server
   become : yes
@@ -84,3 +128,38 @@
       yum:
        name: httpd
        state: present
+      notify :
+       chkconfig
+  handlers :
+    - name : chkconfig
+      service:
+       name : httpd
+       state : restarted
+       
+# - hosts : localhost
+  # connection : local
+  # gather_facts : false
+  # tasks :
+    # - name : setup a load balancer
+      # ec2_elb_lb :
+       # name : aws-ansible-elb
+       # state : present
+       # region : '{{ aws_region }}'
+       # zones :
+        # us-east-1a
+       # listeners :
+       # - protocol : http
+         # load_balancer_port : 80
+         # instance_port : 80
+       # register: awsansible-elb
+    
+    # - name : checking the output of the newly provisioned load balancer
+      # debug : msg = '{{ aws-ansible-elb}}'
+    # - name : add webservers to the load balancer
+      # local_action : ec2_elb
+      # args :
+       # instance_id : '{{ ec2_instances[item].id }}'
+       # ec2_elbs : aws-ansible-elb
+       # state : present
+       # region : '{{ aws_region }}'
+      # with_items : '{{ mylist }}' 
